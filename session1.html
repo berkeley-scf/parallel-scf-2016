@@ -1,0 +1,578 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="November 8, 2016" />
+  <title>Workshop on Parallelization and Campus Computing Resources (Part 1)</title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">Workshop on Parallelization and Campus Computing Resources (Part 1)</h1>
+<h2 class="author">November 8, 2016</h2>
+<h3 class="date">Chris Paciorek, Department of Statistics and Berkeley Research Computing, UC Berkeley</h3>
+</div>
+<h1 id="this-workshop">This workshop</h1>
+<p>This workshop gives an overview of computing and data storage resources available through UC Berkeley and information on using the SCF and Savio Linux clusters.</p>
+<p>Session 2 on November 15 will cover strategies for parallelizing your work and using parallelization in Python, R, MATLAB and C++.</p>
+<p>Savio is the campus Linux high-performance computing cluster, run by <a href="http://research-it.berkeley.edu/programs/berkeley-research-computing">Berkeley Research Computing</a>.</p>
+<p>This tutorial assumes you have a working knowledge of bash and a scripting language such as Python, R, MATLAB, or Julia.</p>
+<p>Materials for this tutorial, including the Markdown file and associated code files that were used to create this document are available on Github at https://github.com/berkeley-scf/parallel-scf-2016. You can download the files by doing a git clone from a terminal window on a UNIX-like machine, as follows: <code>{r, clone, eval=FALSE} git clone https://github.com/berkeley-scf/parallel-scf-2016</code></p>
+<p>The materials are also available as a <a href="https://github.com/berkeley-scf/parallel-scf-2016/archive/master.zip">zip file</a>.</p>
+<p>This material by Christopher Paciorek is licensed under a Creative Commons Attribution 3.0 Unported License.</p>
+<h1 id="learning-resources-and-links">Learning resources and links</h1>
+<p>This workshop is based in part on already-prepared BRC and SCF (Statistical Computing Facility) material and other documentation that you can look at for more details:</p>
+<p>Information on campus resources</p>
+<ul>
+<li><a href="http://statistics.berkeley.edu/computing/servers/cluster-high">Instructions for using the SCF SLURM (high-priority) cluster</a></li>
+<li><a href="http://statistics.berkeley.edu/computing/servers/cluster">Instructions for using the SCF SGE (standard) cluster</a></li>
+<li><a href="http://research-it.berkeley.edu/services/high-performance-computing">Instructions for using the Savio campus Linux cluster</a></li>
+<li><a href="https://github.com/ucberkeley/savio-training-intro-2016">Tutorial on basic usage of Savio</a>, in particular the <a href="https://rawgit.com/ucberkeley/savio-training-intro-2016/master/intro.html">HTML overview</a></li>
+<li><a href="https://github.com/ucberkeley/savio-training-parallel-2016">Tutorial on parallelization on Savio</a>, in particular the <a href="https://rawgit.com/ucberkeley/savio-training-parallel-2016/master/parallel.html">HTML overview</a></li>
+</ul>
+<p>Information on parallel coding (for Session 2)</p>
+<ul>
+<li><a href="https://github.com/berkeley-scf/tutorial-parallel-basics">Tutorial on shared memory parallel processing</a>, in particular the <a href="https://rawgit.com/berkeley-scf/tutorial-parallel-basics/master/parallel-basics.html">HTML overview</a></li>
+<li><a href="https://github.com/berkeley-scf/tutorial-parallel-distributed">Tutorial on distributed memory parallel processing</a>, in particular the <a href="https://rawgit.com/berkeley-scf/tutorial-parallel-distributed/master/parallel-dist.html">HTML overview</a></li>
+</ul>
+<h1 id="outline">Outline</h1>
+<ul>
+<li>Statistics and campus computing resources
+<ul>
+<li>computation</li>
+<li>data storage</li>
+</ul></li>
+<li>Parallelization terminology and concepts</li>
+<li>Basic job submission in SLURM on the SCF
+<ul>
+<li>Accessing software via modules</li>
+<li>Basic job submission</li>
+<li>Monitoring jobs and cluster status</li>
+<li>Interactive jobs</li>
+<li>Using environment variables</li>
+<li>Parallel jobs</li>
+<li>GPU jobs</li>
+</ul></li>
+<li>Job submission on Savio
+<ul>
+<li>Accessing software via modules</li>
+<li>Accounts and partitions</li>
+<li>Basic job submission</li>
+<li>Monitoring jobs and cluster status</li>
+<li>Interactive jobs</li>
+<li>Using environment variables</li>
+<li>Parallel jobs</li>
+<li>Low-priority queue</li>
+<li>GPU jobs</li>
+<li>Spark jobs</li>
+</ul></li>
+<li>Data transfer
+<ul>
+<li>Using standard tools (SCF/SFTP/GUIs)</li>
+<li>Using Globus</li>
+<li>Berkeley Box and bDrive</li>
+</ul></li>
+<li>Getting help</li>
+</ul>
+<h1 id="computational-resources">Computational resources</h1>
+<ul>
+<li><a href="http://statistics.berkeley.edu/computing/servers">Statistics cluster</a>
+<ul>
+<li>'High-priority' cluster: 4 nodes x 24 cores/node; 64 GB RAM per node; SLURM queueing; 14 day time limit</li>
+<li>Standard cluster: 8 nodes x 32 cores/node; 256 GB RAM per node; SGE queueing (to be switched to SLURM in coming months); 28 day time limit</li>
+<li>standard software: Python, R, MATLAB, Julia</li>
+<li>4 GPUs but some obtained for particular research groups</li>
+</ul></li>
+<li><a href="http://research-it.berkeley.edu/services/high-performance-computing">Savio campus cluster</a>
+<ul>
+<li>~6600 nodes across ~330 nodes, 64 GB RAM on most nodes but up to 512 GB RAM on high-memory nodes</li>
+<li>access through:</li>
+<li>faculty computing allowance - CPU-only and GPU nodes - 3 day time limit</li>
+<li>Statistics department condo - 2 nodes, 24 cores per node - 1 node, 4 GPUs (currently with priority access for one research group) - no time limit at the moment</li>
+<li>Python, R, MATLAB, Spark</li>
+</ul></li>
+<li><a href="https://www.xsede.org">NSF XSEDE network</a> of supercomputers
+<ul>
+<li>Bridges supercomputer for big data computing, including Spark</li>
+<li>many other clusters/supercomputers</li>
+<li>access:</li>
+<li>can get initial access via brc@berkeley.edu<br /></li>
+<li>follow up with a start-up allocation (one-page, always approved)</li>
+<li>finally, research grants possible (several page process)</li>
+</ul></li>
+</ul>
+<p><strong>Big picture: if you don't have enough computing resources, don't give up and work on a smaller problem, talk to us at consult@stat.berkeley.edu.</strong></p>
+<h1 id="data-storage-resources">Data storage resources</h1>
+<ul>
+<li>SCF</li>
+<li>tens-hundreds of GB potentially available on SCF home directories</li>
+<li>hundreds of GB to TB potentially available on scratch on SCF</li>
+<li>Savio</li>
+<li>Unlimited storage in scratch on Savio (old files purged eventually)</li>
+<li>Savio &quot;condo&quot; storage: $7000 for 25 TB for 5 years</li>
+<li>UC Berkeley cloud providers</li>
+<li>Unlimited storage on Box through Berkeley (15 GB file limit)</li>
+<li>Unlimited storage on Google Drive (bDrive) through Berkeley (5 TB file limit)</li>
+</ul>
+<h1 id="parallelization-terminology-and-concepts">Parallelization terminology and concepts</h1>
+<ul>
+<li><em>cores</em>: We'll use this term to mean the different processing units available on a single node.</li>
+<li><em>nodes</em>: We'll use this term to mean the different computers, each with their own distinct memory, that make up a cluster or supercomputer.</li>
+<li><em>processes</em> or <em>SLURM tasks</em>: computational instances executing on a machine; multiple processes may be executing at once. Ideally we have no more processes than cores on a node.</li>
+<li><em>threads</em>: multiple paths of execution within a single process; the OS sees the threads as a single process, but one can think of them as 'lightweight' processes. Ideally when considering the processes and their threads, we would have no more processes and threads combined than cores on a node.</li>
+<li><em>computational tasks</em>: We'll use this to mean the independent computational units that make up the job you submit
+<ul>
+<li>each <em>process</em> or <em>SLURM task</em> might carry out one computational task or might be assigned multiple tasks sequentially or as a group.</li>
+</ul></li>
+</ul>
+<h1 id="job-competition-and-scheduling-on-the-scf-and-savio-clusters">Job competition and scheduling on the SCF and Savio clusters</h1>
+<ul>
+<li>goals:
+<ul>
+<li>allow users to share the CPUs equitably</li>
+<li>efficiently use the CPUs to maximum potential</li>
+<li>allow large jobs to run</li>
+<li>allow users to submit many jobs and have the scheduler manage them</li>
+</ul></li>
+<li>jobs with various requirements
+<ul>
+<li>time length</li>
+<li>number of cores</li>
+</ul></li>
+<li>current scheduling policies
+<ul>
+<li>fairshare for queue</li>
+<li>once running, only subject to time limits</li>
+<li>backfilling and (on old SCF cluster) resource reservations</li>
+</ul></li>
+<li>time limits
+<ul>
+<li>very helpful for the scheduler</li>
+<li>required on Savio</li>
+<li>not required (for now) on SCF, but please set time limits if you are submitting dozens/hundreds/more jobs</li>
+</ul></li>
+</ul>
+<h1 id="scf-clusters">SCF clusters</h1>
+<p>SLURM (new) cluster</p>
+<ul>
+<li>submission nodes: all SCF Linux machines</li>
+<li>compute nodes: scf-sm20, scf-sm21, scf-sm22, scf-sm23</li>
+<li>96 total cores</li>
+<li>14 day time limit by default</li>
+<li>if submitting many jobs (say more than 30) please try to give a rough time limit but be conservative</li>
+</ul>
+<p>SGE (old) cluster</p>
+<ul>
+<li>submission nodes: all SCF Linux machines</li>
+<li>compute nodes: scf-sm00, scf-sm01, scf-sm02, scf-sm03, scf-sm10, scf-sm11, scf-sm12, scf-sm13</li>
+<li>256 total cores</li>
+<li>28 day time limit by default</li>
+<li>to transition to SLURM in coming months</li>
+</ul>
+<h1 id="scf-accessing-software-via-modules">SCF: Accessing software via modules</h1>
+<p>Savio and other systems make use of Linux environment modules extensively to provide software such that you can access different versions of software and access software with conflicting requirements.</p>
+<p>We're starting to make use of modules on the SCF.</p>
+<pre><code>module list
+module avail
+
+module unload python
+module load python/2
+module list
+
+module switch python/2 python/3</code></pre>
+<p>At this point most modules on the SCF are for machine learning software that can use GPUs.</p>
+<h1 id="slurm-basic-batch-job-submission">SLURM: basic batch job submission</h1>
+<p>Let's see how to submit a simple job.</p>
+<p>Here's an example job script (<em>job-basic-scf.sh</em>) that I'll run.</p>
+<pre><code>#!/bin/bash
+# Job name:
+#SBATCH --job-name=test
+#
+# Wall clock limit (3 minutes here):
+#SBATCH --time=00:03:00
+#
+## Command(s) to run:
+python calc.py &gt;&amp; calc.out</code></pre>
+<p>By default this will request only one core for the job.</p>
+<p>To submit the job:</p>
+<pre><code>sbatch job-basic-scf.sh</code></pre>
+<p>Note that the JOB_ID is printed as the output of this call.</p>
+<p>We could also include the SLURM flags in the submission script. Here's the simplified script:</p>
+<pre><code>#!/bin/bash
+python calc.py &gt;&amp; calc.out</code></pre>
+<p>and here is the job submission:</p>
+<pre><code>sbatch --job-name=test --time=00:03:00 job-basic-scf.sh</code></pre>
+<h1 id="scf-monitoring-jobs-and-cluster-status">SCF: Monitoring jobs and cluster status</h1>
+<p><code>squeue</code> allows us to monitor our jobs and the general state of the cluster and of queued jobs.</p>
+<pre><code>squeue -j JOB_ID
+
+squeue -u ${USER}
+
+# to see a bunch of useful information on all jobs
+alias sq=&#39;squeue -o &quot;%.7i %.9P %.20j %.8u %.2t %l %.9M %.5C %.8r %.6D %R %p %q&quot;&#39;
+sq</code></pre>
+<h1 id="scf-interactive-jobs">SCF: Interactive jobs</h1>
+<p>To start an interactive session,</p>
+<pre><code>srun --pty /bin/bash</code></pre>
+<p>To use graphical interfaces, you need to do add an extra flag:</p>
+<pre><code>srun --pty --x11=first /bin/bash
+matlab
+
+# alternatively:
+srun --pty --x11=first matlab</code></pre>
+<p>To connect to a specific node (e.g., to monitor another job or copy files to/from /tmp or /var/tmp on the node):</p>
+<pre><code>srun --pty -w scf-sm22 /bin/bash</code></pre>
+<h1 id="scf-parallel-jobs">SCF: Parallel jobs</h1>
+<p>If you are submitting a job that uses multiple nodes, you'll need to carefully specify the resources you need. The key flags for use in your job script are:</p>
+<ul>
+<li><code>--cpus-per-task</code> (or <code>-c</code>): number of cpus to be used for each task</li>
+<li><code>--ntasks-per-node</code>: number of SLURM tasks (i.e., processes) one wants to run on each node</li>
+<li><code>--nodes</code> (or <code>-N</code>): number of nodes to use</li>
+</ul>
+<p>In addition, in some cases it can make sense to use the <code>--ntasks</code> (or <code>-n</code>) option to indicate the total number of SLURM tasks and let the scheduler determine how many nodes and tasks per node are needed.</p>
+<p>Here's an example job script (see also <em>job-parallel-scf.sh</em>) for a parallel iPython job.</p>
+<pre><code>#!/bin/bash
+# Job name:
+#SBATCH --job-name=test
+#
+# Number of nodes
+#SBATCH --nodes=1
+#
+# Number of processors per node:
+#SBATCH --ntasks-per-node=8
+#
+# Wall clock limit:
+#SBATCH --time=00:00:30
+#
+## Command(s) to run:
+ipcluster start -n $SLURM_NTASKS_PER_NODE &amp;
+ipython parallel-analysis.py</code></pre>
+<h1 id="scf-using-environment-variables">SCF: Using environment variables</h1>
+<p>When you write your code, you may need to specify information about the number of cores to use. SLURM will provide a variety of variables that you can use in your code so that it adapts to the resources you have requested rather than being hard-coded.</p>
+<p>Here are some of the variables that may be useful: SLURM_NTASKS, SLURM_NTASKS_PER_NODE, SLURM_CPUS_PER_TASK, SLURM_NODELIST, SLURM_NNODES.</p>
+<p>To control your code and use the resources you've requested, you can use those variables in your job submission script (as above) or read those variables into your program.</p>
+<p>For example:</p>
+<pre><code>import os                               ## Python
+int(os.environ[&#39;SLURM_NTASKS&#39;])         ## Python
+
+as.numeric(Sys.getenv(&#39;SLURM_NTASKS&#39;))  ## R
+
+str2num(getenv(&#39;SLURM_NTASKS&#39;)))        ## MATLAB</code></pre>
+<h1 id="scf-gpu-jobs">SCF: GPU jobs</h1>
+<p>The SCF has four GPUs. One of those is on scf-sm20 in the SLURM cluster. The other three were obtained by faculty members are reserved for priority access for their groups. In some cases we may be able to help you get access to those other GPUs.</p>
+<p>To use the scf-sm20 GPU, you need the following flags in your srun/sbatch invocation (or your job submission script):</p>
+<pre><code>--partition=gpu -w scf-sm20-gpu --gres=gpu:1</code></pre>
+<p>Note that you can't use more than two CPUs with one of these GPU jobs.</p>
+<p>If you're using Tensorflow, Caffe, Theano, or Torch with GPU computation, you'll generally need to load the appropriate module to make the GPU-enabled software available:</p>
+<pre><code>module load tensorflow
+module load caffe  # python 3 support
+module load caffe/2016-10-05-py2 # python 2 support
+module load torch
+module load theano</code></pre>
+<p>If you load one of these, you'll see that CUDA and (in some cases) cuDNN are also loaded for you.</p>
+<h1 id="savio-logging-in">Savio: Logging in</h1>
+<p>To login, you need to have software on your own machine that gives you access to a UNIX terminal (command-line) session. These come built-in with Mac (see <code>Applications -&gt; Utilities -&gt; Terminal</code>). For Windows, some options include <a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html">PuTTY</a>.</p>
+<p>You also need to set up your smartphone or tablet with <em>Google Authenticator</em> to generate one-time passwords for you.</p>
+<p>Here are instructions for <a href="http://research-it.berkeley.edu/services/high-performance-computing/logging-savio">doing this setup, and for logging in</a>.</p>
+<p>Then to login:</p>
+<pre><code>ssh SAVIO_USERNAME@hpc.brc.berkeley.edu</code></pre>
+<p>Then enter XXXXXYYYYYY where XXXXXX is your PIN and YYYYYY is the one-time password. YYYYYY will be shown when you open your <em>Google authenticator</em> app on your phone/tablet.</p>
+<p>One can then navigate around and get information using standard UNIX commands such as <code>ls</code>, <code>cd</code>, <code>du</code>, <code>df</code>, etc.</p>
+<p>If you want to be able to open programs with graphical user interfaces:</p>
+<pre><code>ssh -Y SAVIO_USERNAME@hpc.brc.berkeley.edu</code></pre>
+<p>To display the graphical windows on your local machine, you'll need X server software on your own machine to manage the graphical windows. For Windows, your options include <em>eXceed</em> or <em>Xming</em> and for Mac, there is <em>XQuartz</em>.</p>
+<h1 id="savio-accessing-software-via-modules">Savio: Accessing software via modules</h1>
+<p>A lot of software is available on Savio but needs to be loaded from the relevant software module before you can use it.</p>
+<pre><code>module list  # what&#39;s loaded?
+module avail  # what&#39;s available</code></pre>
+<p>One thing that tricks people is that the modules are arranged in a hierarchical (nested) fashion, so you only see some of the modules as being available <em>after</em> you load the parent module. Here's how we see the Python packages that are available.</p>
+<pre><code>which python
+python
+
+module avail
+module load python/2.7.8
+which python
+module avail
+module load numpy
+python 
+# import numpy as np</code></pre>
+<p>Similarly, we can see that linear algebra, FFT, and HDF5/NetCDF software is available only after loading either the intel or gcc modules.</p>
+<pre><code>module load intel
+module avail
+module swap intel gcc
+module avail</code></pre>
+<h1 id="savio-submitting-jobs----accounts-and-partitions">Savio: Submitting jobs -- accounts and partitions</h1>
+<p>All computations are done by submitting jobs to the scheduling software that manages jobs on the cluster, called SLURM.</p>
+<p>When submitting a job, the main things you need to indicate are the project account you are using (in some cases you might have access to multiple accounts such as an FCA and a condo) and the partition.</p>
+<p>You can see what accounts you have access to and which partitions within those accounts as follows:</p>
+<pre><code>sacctmgr -p show associations user=${USER}</code></pre>
+<p>Here's an example of the output for a user who has access to an FCA, a condo, and a special partner account:</p>
+<pre><code>Cluster|Account|User|Partition|Share|GrpJobs|GrpTRES|GrpSubmit|GrpWall|GrpTRESMins|MaxJobs|MaxTRES|MaxTRESPerNode|MaxSubmit|MaxWall|MaxTRESMins|QOS|Def QOS|GrpTRESRunMins|
+brc|co_stat|paciorek|savio2_bigmem|1||||||||||||savio_lowprio|savio_lowprio||
+brc|co_stat|paciorek|savio2_gpu|1||||||||||||savio_lowprio,stat_gpu2_normal|stat_gpu2_normal||
+brc|co_stat|paciorek|savio2_htc|1||||||||||||savio_lowprio|savio_lowprio||
+brc|co_stat|paciorek|savio|1||||||||||||savio_lowprio|savio_lowprio||
+brc|co_stat|paciorek|savio_bigmem|1||||||||||||savio_lowprio|savio_lowprio||
+brc|co_stat|paciorek|savio2|1||||||||||||savio_lowprio,stat_normal|stat_normal||
+brc|fc_paciorek|paciorek|savio2_gpu|1||||||||||||savio_debug,savio_normal|savio_normal||
+brc|fc_paciorek|paciorek|savio2_htc|1||||||||||||savio_debug,savio_normal|savio_normal||
+brc|fc_paciorek|paciorek|savio2_bigmem|1||||||||||||savio_debug,savio_normal|savio_normal||
+brc|fc_paciorek|paciorek|savio2|1||||||||||||savio_debug,savio_normal|savio_normal||
+brc|fc_paciorek|paciorek|savio|1||||||||||||savio_debug,savio_normal|savio_normal||
+brc|fc_paciorek|paciorek|savio_bigmem|1||||||||||||savio_debug,savio_normal|savio_normal||</code></pre>
+<p>Because you are part of a condo, you'll notice that you have <em>low-priority</em> access to certain partitions. In addition to the Statistics nodes in our condo to which we have normal access, I can also burst beyond the condo and use other partitions at low-priority (see below).</p>
+<p>In contrast, through my FCA, I have access to all the various partitions at normal priority, but of course I have to 'pay' for access through my FCA allotment.</p>
+<h1 id="savio-basic-job-submission">Savio: Basic job submission</h1>
+<p>Let's see how to submit a simple job. If your job will only use the resources on a single node, you can do the following.</p>
+<p>Here's an example job script that I'll run. You'll need to modify the --account value and possibly the --partition value.</p>
+<pre><code>#!/bin/bash
+# Job name:
+#SBATCH --job-name=test
+#
+# Account:
+#SBATCH --account=co_stat
+#
+# Partition:
+#SBATCH --partition=savio2
+#
+# Wall clock limit (30 seconds here):
+#SBATCH --time=00:00:30
+#
+## Command(s) to run:
+module load python/3.2.3 numpy
+python3 calc.py &gt;&amp; calc.out</code></pre>
+<p>Now let's submit and monitor the job:</p>
+<pre><code>sbatch job-basic-savio.sh</code></pre>
+<h1 id="savio-monitoring-jobs-and-cluster-status">Savio: Monitoring jobs and cluster status</h1>
+<p>Use of squeue as on SCF. Also the <code>wwall</code> command shows resource usage.</p>
+<pre><code>squeue 
+
+squeue -u paciorek
+
+squeue -j JOB_ID
+
+wwall -j JOB_ID</code></pre>
+<h1 id="savio-interactive-jobs">Savio: Interactive jobs</h1>
+<p>You can also do work interactively.</p>
+<p>For this, you may want to have used the -Y flag to ssh if you are running software with a GUI such as MATLAB.</p>
+<pre><code># ssh -Y SAVIO_USERNAME@hpc.brc.berkeley.edu
+srun -A co_stat -p savio2  -N 1 -t 10:0 --pty bash
+# now execute on the compute node:
+module load matlab
+matlab</code></pre>
+<h1 id="savio-using-environment-variables">Savio: Using environment variables</h1>
+<p>The story here is the same as on the SCF. You can use the various SLURM environment variables to control your code's use of parallelization.</p>
+<p>When you write your code, you may need to specify information about the number of cores to use. SLURM will provide a variety of variables that you can use in your code so that it adapts to the resources you have requested rather than being hard-coded.</p>
+<p>Here are some of the variables that may be useful: SLURM_NTASKS, SLURM_NTASKS_PER_NODE, SLURM_CPUS_PER_TASK, SLURM_NODELIST, SLURM_NNODES.</p>
+<p>To control your code and use the resources you've requested, you can use those variables in your job submission script (as above) or read those variables into your program.</p>
+<p>For example:</p>
+<pre><code>import os                               ## Python
+int(os.environ[&#39;SLURM_NTASKS&#39;])         ## Python
+
+as.numeric(Sys.getenv(&#39;SLURM_NTASKS&#39;))  ## R
+
+str2num(getenv(&#39;SLURM_NTASKS&#39;)))        ## MATLAB</code></pre>
+<h1 id="savio-parallel-jobs">Savio: Parallel jobs</h1>
+<p>Here are some common paradigms on Savio:</p>
+<ul>
+<li>multi-core or multi-process jobs on one node
+<ul>
+<li><code>--nodes=1 --ntasks-per-node=1 --cpus-per-task=c</code></li>
+<li><code>--nodes=1 --ntasks-per-node=n --cpus-per-task=1</code></li>
+</ul></li>
+<li>MPI jobs that use <em>one</em> CPU per task for each of <em>n</em> SLURM tasks
+<ul>
+<li><code>--ntasks=n --cpus-per-task=1</code></li>
+<li><code>--nodes=x --ntasks-per-node=y --cpus-per-task=1</code>
+<ul>
+<li>assumes that <code>n = x*y</code></li>
+</ul></li>
+</ul></li>
+<li>hybrid parallelization jobs (e.g., MPI+threading) that use <em>c</em> CPUs for each of <em>n</em> SLURM tasks
+<ul>
+<li><code>--ntasks=n --cpus-per-task=c</code></li>
+<li><code>--nodes=x --ntasks-per-node=y cpus-per-task=c</code>
+<ul>
+<li>assumes that <code>y*c</code> equals the number of cores on a node and that <code>n = x*y</code> equals the total number of tasks</li>
+</ul></li>
+</ul></li>
+</ul>
+<p>In general, the defaults for the various flags will be 1 so some of the flags above are not strictly needed.</p>
+<p>For Savio, there are lots more examples of job submission scripts for different kinds of parallelization (multi-node (MPI), multi-core (openMP), hybrid, etc.) <a href="http://research-it.berkeley.edu/services/high-performance-computing/running-your-jobs#Job-submission-with-specific-resource-requirements">here</a>.</p>
+<p>Let's extend our parallel iPython example to multiple nodes (see <em>job-parallel-savio.sh</em>).</p>
+<pre><code>#!/bin/bash
+# Job name:
+#SBATCH --job-name=test
+#
+# Account:
+#SBATCH --account=fc_paciorek
+#
+# Partition:
+#SBATCH --partition=savio2
+#
+# Number of processors
+#SBATCH --ntasks=48
+#
+# Wall clock limit:
+#SBATCH --time=00:00:30
+#
+## Command(s) to run:
+module load python/2.7.8 ipython gcc openmpi
+ipcontroller --ip=&#39;*&#39; &amp;
+sleep 5
+# srun here should start as many engines as tasks
+srun ipengine &amp;   
+sleep 15  # wait until all engines have successfully started
+ipython parallel-analysis.py</code></pre>
+<h1 id="savio-low-priority-queue">Savio: Low-priority queue</h1>
+<p>Condo users have access to the broader compute resource that is limited only by the size of partitions, under the <em>savio_lowprio</em> QoS (queue). However this QoS does not get a priority as high as the general QoSs, such as <em>savio_normal</em> and <em>savio_debug</em>, or all the condo QoSs, and it is subject to preemption when all the other QoSs become busy.</p>
+<p>More details can be found <a href="http://research-it.berkeley.edu/services/high-performance-computing/user-guide">in the <em>Low Priority Jobs</em> section of the user guide</a>.</p>
+<p>Suppose I wanted to burst beyond the Statistics condo to run on 20 nodes. I'll illustrate here with an interactive job though usually this would be for a batch job.</p>
+<pre><code>srun -A co_stat -p savio2 --qos=savio_lowprio  -N 20 -t 10:0 --pty bash
+env | grep SLURM</code></pre>
+<h1 id="savio-gpu-jobs">Savio: GPU jobs</h1>
+<p>You'll need to indicate the need for one (or more) GPUs in your submission script.</p>
+<p>Also, the GPU nodes will run jobs from multiple users at once. For each GPU that you request, you should request twice as many CPUs.</p>
+<pre><code>#!/bin/bash
+# Job name:
+#SBATCH --job-name=test
+#
+# Account:
+#SBATCH --account=fc_paciorek
+#
+# Partition:
+#SBATCH --partition=savio2_gpu
+#
+# GPU:
+#SBATCH --gres=gpu:1
+#
+# Number of tasks (one for each GPU desired for use case) (example):
+#SBATCH --ntasks=1
+#
+# Processors per task (please always specify total number of processors twice of number of GPUs):
+#SBATCH --cpus-per-task=2
+#
+# Wall clock limit (3 hours here):
+#SBATCH --time=3:00:00
+#
+## Command(s) to run:
+
+# usually need cuda loaded
+module load cuda
+# now run your GPU job</code></pre>
+<p>If you're logged on interactively, you can run <em>nvidia-smi</em> to see the activity on the GPU.</p>
+<h1 id="savio-spark-jobs">Savio: Spark jobs</h1>
+<p>Savio offers Spark, but does not provide an HDFS (distributed file system) in the usual way. Instead, Spark on Savio loads data off of /scratch. I've heard some indication that this results in performance reduction but don't have any further information on this.</p>
+<p>Here's an example job submission script (<em>job-spark.sh</em>):</p>
+<pre><code>#!/bin/bash
+# Job name:
+#SBATCH --job-name=test
+#
+# Account:
+#SBATCH --account=fc_paciorek
+#
+# Partition:
+#SBATCH --partition=savio2
+#
+# Number of nodes
+#SBATCH --nodes=8
+#
+# Wall clock limit (1 day here):
+#SBATCH --time=1-00:00:00
+#
+## Command(s) to run:
+module load java spark
+source /global/home/groups/allhands/bin/spark_helper.sh
+
+spark-start
+
+spark-submit --master $SPARK_URL analysis.py 
+
+spark-stop</code></pre>
+<p>Here's a completely uninteresting PySpark session showing how to read off of /scratch:</p>
+<pre><code>lines = sc.textFile(&#39;/global/scratch/paciorek/nielsen/*/*.tsv&#39;)
+lines.count()</code></pre>
+<h1 id="data-transfer-scpsftp">Data transfer: SCP/SFTP</h1>
+<p>We can use the <em>scp</em> and <em>sftp</em> protocols to transfer files.</p>
+<p>You need to use the Savio data transfer node, <code>dtn.brc.berkeley.edu</code>.</p>
+<p>Linux/Mac:</p>
+<pre><code># to Savio, while on your local machine
+scp bayArea.csv paciorek@dtn.brc.berkeley.edu:~/.
+scp bayArea.csv paciorek@dtn.brc.berkeley.edu:~/data/newName.csv
+scp bayArea.csv paciorek@dtn.brc.berkeley.edu:/global/scratch/paciorek/.
+
+# from Savio, while on your local machine
+scp paciorek@dtn.brc.berkeley.edu:~/data/newName.csv ~/Desktop/.</code></pre>
+<p>If you can ssh to your local machine or want to transfer files to other systems on to which you can ssh, you can syntax like this, while logged onto Savio:</p>
+<pre><code>ssh dtn
+scp ~/file.csv OTHER_USERNAME@other.domain.edu:~/data/.</code></pre>
+<p>One program you can use with Windows is <em>WinSCP</em>, and a multi-platform program for doing transfers via SFTP is <em>FileZilla</em>. After logging in, you'll see windows for the Savio filesystem and your local filesystem on your machine. You can drag files back and forth.</p>
+<p>You can package multiple files (including directory structure) together using tar:</p>
+<pre><code>tar -cvzf files.tgz dir_to_zip 
+# to untar later:
+tar -xvzf files.tgz</code></pre>
+<h1 id="data-transfer-globus">Data transfer: Globus</h1>
+<p>You can use Globus Connect to transfer data data to/from Savio (and between other resources) quickly and unattended. This is a better choice for large transfers. Here are some <a href="http://research-it.berkeley.edu/services/high-performance-computing/using-globus-connect-savio">instructions</a>.</p>
+<p>Globus transfers data between <em>endpoints</em>. Possible endpoints include: Savio, your laptop or desktop, NERSC, and XSEDE, among others.</p>
+<p>Savio's endpoint is named <code>ucb#brc</code>.</p>
+<p>SCF's endpoint is named <code>UC Berkeley Statistics Department</code>.</p>
+<p>If you are transferring to/from your laptop, you'll need 1) Globus Connect Personal set up, 2) your machine established as an endpoint and 3) Globus Connect Pesonal actively running on your machine. At that point you can proceed as below.</p>
+<p>To transfer files, you open Globus at <a href="https://globus.org">globus.org</a> and authenticate to the endpoints you want to transfer between. You can then start a transfer and it will proceed in the background, including restarting if interrupted.</p>
+<p>Globus also provides a <a href="https://docs.globus.org/cli/using-the-cli">command line interface</a> that will allow you to do transfers programmatically, such that a transfer could be embedded in a workflow script.</p>
+<h1 id="data-transfer-box">Data transfer: Box</h1>
+<p>Box provides <strong>unlimited</strong>, free, secured, and encrypted content storage of files with a maximum file size of 15 Gb to Berkeley affiliates. So it's a good option for backup and long-term storage.</p>
+<p>You can move files between Box and your laptop using the Box Sync app. And you can interact with Box via a web browser at <a href="http://box.berkeley.edu">http://box.berkeley.edu</a>.</p>
+<p>The best way to move files between Box and Savio is <a href="http://research-it.berkeley.edu/services/high-performance-computing/transferring-data-between-savio-and-your-uc-berkeley-box-account">via lftp as discussed here</a>.</p>
+<p>Here's how you logon to box via <em>lftp</em> on Savio (assuming you've set up an external password already as described in the link above):</p>
+<pre><code>ssh SAVIO_USERNAME@dtn.brc.berkeley.edu
+module load lftp
+lftp ftp.box.com
+set ssl-allow true
+user CAMPUS_USERNAME@berkeley.edu</code></pre>
+<pre><code>lpwd # on Savio
+ls # on box
+!ls # on Savio
+mkdir workshops
+cd workshops # on box
+lcd savio-training-intro-2016 # on savio
+put foreach-doMPI.R # savio to box
+get AirlineDataAll.ffData  # box to savio; 1.4 Gb in ~ 1 minute</code></pre>
+<p>One additional command that can be quite useful is <em>mirror</em>, which lets you copy an entire directory to/from Box.</p>
+<pre><code># to upload a directory from Savio to Box 
+mirror -R mydir
+# to download a directory from Box to Savio
+mirror mydir .</code></pre>
+<p>Be careful, because it's fairly easy to wipe out files or directories on Box.</p>
+<p>Finally you can set up <em>special purpose accounts</em> (Berkeley SPA) so files are owned at a project level rather than by individuals.</p>
+<p>BRC is working (long-term) on making Globus available for transfer to/from Box, but it's not available yet.</p>
+<h1 id="data-transfer-bdrive-google-drive">Data transfer: bDrive (Google Drive)</h1>
+<p>bDrive provides <strong>unlimited</strong>, free, secured, and encrypted content storage of files with a maximum file size of 5 Tb to Berkeley affiliates.</p>
+<p>You can move files to and from your laptop using the Google Drive app.</p>
+<p>There are also some third-party tools for copying files to/from Google Drive, though I've found them to be a bit klunky. This is why we recommend using Box for workflows at this point. However, BRC is also working (short-term) on making Globus available for transfer to/from bDrive, though it's not available yet.</p>
+<h1 id="how-to-get-additional-help">How to get additional help</h1>
+<ul>
+<li>For SCF resources
+<ul>
+<li>consult@stat.berkeley.edu</li>
+</ul></li>
+<li>For initial Savio, XSEDE, and cloud computing questions:
+<ul>
+<li>consult@stat.berkeley.edu</li>
+</ul></li>
+<li>For technical issues and questions about using Savio:
+<ul>
+<li>brc-hpc-help@berkeley.edu</li>
+</ul></li>
+<li>For questions about computing resources in general, including cloud computing:
+<ul>
+<li>brc@berkeley.edu</li>
+</ul></li>
+<li>For questions about data management (including HIPAA-protected data):
+<ul>
+<li>researchdata@berkeley.edu</li>
+</ul></li>
+</ul>
+</body>
+</html>
