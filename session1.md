@@ -294,6 +294,7 @@ Here's an example job script (see also *job-parallel-scf.sh*) for a parallel iPy
 ## Command(s) to run:
 ipcluster start -n $SLURM_NTASKS_PER_NODE &
 sleep 40
+export DATADIR=/scratch/users/paciorek/243/AirlineData
 ipython parallel-analysis.py > parallel-analysis.pyout
 ```
 
@@ -524,7 +525,7 @@ Let's extend our parallel iPython example to multiple nodes (see *job-parallel-s
 #SBATCH --job-name=test
 #
 # Account:
-#SBATCH --account=fc_paciorek
+#SBATCH --account=co_stat
 #
 # Partition:
 #SBATCH --partition=savio2
@@ -533,15 +534,16 @@ Let's extend our parallel iPython example to multiple nodes (see *job-parallel-s
 #SBATCH --ntasks=48
 #
 # Wall clock limit:
-#SBATCH --time=00:00:30
+#SBATCH --time=00:05:00
 #
 ## Command(s) to run:
-module load python/2.7.8 ipython gcc openmpi
+module load python/2.7.8 pandas ipython gcc openmpi
 ipcontroller --ip='*' &
-sleep 5
+sleep 20
 # srun here should start as many engines as tasks
 srun ipengine &   
-sleep 15  # wait until all engines have successfully started
+sleep 50  # wait until all engines have successfully started
+export DATADIR=/global/scratch/paciorek
 ipython parallel-analysis.py
 ```
 
@@ -575,7 +577,8 @@ More details can be found [in the *Low Priority Jobs* section of the user guide]
 Suppose I wanted to burst beyond the Statistics condo to run on 20 nodes. I'll illustrate here with an interactive job though usually this would be for a batch job.
 
 ```
-srun -A co_stat -p savio2 --qos=savio_lowprio  -N 20 -t 10:0 --pty bash
+srun --account=co_stat --partition=savio2 --qos=savio_lowprio \
+      --nodes=20 --time=0:10:00 --pty bash
 env | grep SLURM
 ```
 
@@ -591,7 +594,7 @@ Also, the GPU nodes will run jobs from multiple users at once. For each GPU that
 #SBATCH --job-name=test
 #
 # Account:
-#SBATCH --account=fc_paciorek
+#SBATCH --account=co_stat
 #
 # Partition:
 #SBATCH --partition=savio2_gpu

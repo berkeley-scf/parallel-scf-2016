@@ -15,10 +15,11 @@
 #SBATCH --time=00:05:00
 #
 ## Command(s) to run:
-module load python/2.7.8 ipython gcc openmpi
+module load python/2.7.8 pandas ipython gcc openmpi
 ipcontroller --ip='*' &
 sleep 20
 # srun here should start as many engines as tasks
 srun ipengine &   
 sleep 50  # wait until all engines have successfully started
+export DATADIR=/global/scratch/paciorek
 ipython parallel-analysis.py > parallel-analysis.pyout
