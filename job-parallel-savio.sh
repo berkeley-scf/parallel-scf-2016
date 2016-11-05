@@ -3,7 +3,7 @@
 #SBATCH --job-name=test
 #
 # Account:
-#SBATCH --account=fc_paciorek
+#SBATCH --account=co_stat
 #
 # Partition:
 #SBATCH --partition=savio2
@@ -15,7 +15,7 @@
 #SBATCH --time=00:05:00
 #
 ## Command(s) to run:
-module load python/2.7.8 pandas ipython gcc openmpi
+module load python/2.7.8 pandas scipy ipython gcc openmpi
 ipcontroller --ip='*' &
 sleep 20
 # srun here should start as many engines as tasks

@@ -705,7 +705,11 @@ Savio's endpoint is named `ucb#brc`.
 
 SCF's endpoint is named `UC Berkeley Statistics Department`.
 
-If you are transferring to/from your laptop, you'll need 1) Globus Connect Personal set up, 2) your machine established as an endpoint and 3) Globus Connect Pesonal actively running on your machine. At that point you can proceed as below.
+If you are transferring to/from your laptop, you'll need 
+
+- 1) Globus Connect Personal set up, 
+- 2) your machine established as an endpoint and 
+- 3) Globus Connect Personal actively running on your machine. At that point you can proceed as below.
 
 To transfer files, you open Globus at [globus.org](https://globus.org) and authenticate to the endpoints you want to transfer between. You can then start a transfer and it will proceed in the background, including restarting if interrupted. 
 
@@ -727,7 +731,7 @@ ssh SAVIO_USERNAME@dtn.brc.berkeley.edu
 module load lftp
 lftp ftp.box.com
 set ssl-allow true
-user CAMPUS_USERNAME@berkeley.edu
+user YOUR_CALNET_ID@berkeley.edu
 ```
 
 ```

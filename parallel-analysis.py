@@ -13,7 +13,7 @@ import pandas
 import os
 
 datadir = os.environ['DATADIR']
-dat = pandas.read_csv(datadir + 'bayArea.csv', header = None)
+dat = pandas.read_csv(datadir + '/' + 'bayArea.csv', header = None)
 dat.columns = ('Year','Month','DayofMonth','DayOfWeek','DepTime','CRSDepTime','ArrTime','CRSArrTime','UniqueCarrier','FlightNum','TailNum','ActualElapsedTime','CRSElapsedTime','AirTime','ArrDelay','DepDelay','Origin','Dest','Distance','TaxiIn','TaxiOut','Cancelled','CancellationCode','Diverted','CarrierDelay','WeatherDelay','NASDelay','SecurityDelay','LateAircraftDelay')
 
 dview.execute('import statsmodels.api as sm')
