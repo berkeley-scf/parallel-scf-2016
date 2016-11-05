@@ -12,13 +12,13 @@
 #SBATCH --ntasks=48
 #
 # Wall clock limit:
-#SBATCH --time=00:00:30
+#SBATCH --time=00:05:00
 #
 ## Command(s) to run:
 module load python/2.7.8 ipython gcc openmpi
 ipcontroller --ip='*' &
-sleep 5
+sleep 20
 # srun here should start as many engines as tasks
 srun ipengine &   
-sleep 15  # wait until all engines have successfully started
-ipython parallel-analysis.py
+sleep 50  # wait until all engines have successfully started
+ipython parallel-analysis.py > parallel-analysis.pyout
