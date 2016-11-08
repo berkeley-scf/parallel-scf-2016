@@ -13,6 +13,7 @@
 #
 ## Command(s) to run:
 ipcluster start -n $SLURM_NTASKS_PER_NODE &
-sleep 40
+sleep 50
 export DATADIR=/scratch/users/paciorek/243/AirlineData
 ipython parallel-analysis.py > parallel-analysis.pyout
+ipcluster stop

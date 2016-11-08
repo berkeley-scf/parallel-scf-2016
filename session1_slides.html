@@ -143,10 +143,12 @@ November 8, 2016
 <ul>
 <li>tens-hundreds of GB potentially available on SCF home directories</li>
 <li>hundreds of GB to TB potentially available on scratch on SCF</li>
+<li>total disk ~ 9 TB</li>
 </ul></li>
 <li>Savio
 <ul>
-<li>Unlimited storage in scratch on Savio (old files purged eventually)</li>
+<li>'Unlimited' storage in scratch on Savio (old files purged eventually)</li>
+<li>Total scratch space ~ 850 TB</li>
 <li>Savio &quot;condo&quot; storage: $7000 for 25 TB for 5 years</li>
 </ul></li>
 <li>UC Berkeley cloud providers
@@ -211,9 +213,9 @@ November 8, 2016
 <p>SGE (old) cluster</p>
 <ul>
 <li>submission nodes: all SCF Linux machines</li>
-<li>compute nodes: scf-sm00, scf-sm01, scf-sm02, scf-sm03, scf-sm10, scf-sm11, scf-sm12, scf-sm13</li>
+<li>compute nodes: scf-sm0[0123], scf-sm1[0123]</li>
 <li>256 total cores</li>
-<li>28 day time limit by default</li>
+<li>28 day maximum time limit (needs to be requested with job)</li>
 <li>to transition to SLURM in coming months</li>
 </ul>
 </div>
@@ -299,11 +301,13 @@ srun --pty --x11=first matlab</code></pre>
 #SBATCH --ntasks-per-node=8
 #
 # Wall clock limit:
-#SBATCH --time=00:00:30
+#SBATCH --time=00:05:00
 #
 ## Command(s) to run:
 ipcluster start -n $SLURM_NTASKS_PER_NODE &amp;
-ipython parallel-analysis.py</code></pre>
+sleep 40
+export DATADIR=/scratch/users/paciorek/243/AirlineData
+ipython parallel-analysis.py &gt; parallel-analysis.pyout</code></pre>
 </div>
 <div id="scf-using-environment-variables" class="slide section level1">
 <h1>SCF: Using environment variables</h1>
@@ -323,7 +327,7 @@ str2num(getenv(&#39;SLURM_NTASKS&#39;)))        ## MATLAB</code></pre>
 <p>The SCF has four GPUs. One of those is on scf-sm20 in the SLURM cluster. The other three were obtained by faculty members are reserved for priority access for their groups. In some cases we may be able to help you get access to those other GPUs.</p>
 <p>To use the scf-sm20 GPU, you need the following flags in your srun/sbatch invocation (or your job submission script):</p>
 <pre><code>--partition=gpu -w scf-sm20-gpu --gres=gpu:1</code></pre>
-<p>Note that you can't use more than two CPUs with one of these GPU jobs.</p>
+<p>Note that you can't use more than two CPUs with such a GPU jobs.</p>
 <p>If you're using Tensorflow, Caffe, Theano, or Torch with GPU computation, you'll generally need to load the appropriate module to make the GPU-enabled software available:</p>
 <pre><code>module load tensorflow
 module load caffe  # python 3 support
@@ -387,13 +391,13 @@ brc|fc_paciorek|paciorek|savio2_bigmem|1||||||||||||savio_debug,savio_normal|sav
 brc|fc_paciorek|paciorek|savio2|1||||||||||||savio_debug,savio_normal|savio_normal||
 brc|fc_paciorek|paciorek|savio|1||||||||||||savio_debug,savio_normal|savio_normal||
 brc|fc_paciorek|paciorek|savio_bigmem|1||||||||||||savio_debug,savio_normal|savio_normal||</code></pre>
-<p>Because you are part of a condo, you'll notice that you have <em>low-priority</em> access to certain partitions. In addition to the Statistics nodes in our condo to which we have normal access, I can also burst beyond the condo and use other partitions at low-priority (see below).</p>
+<p>Because you are part of a condo, you'll notice that you have <em>low-priority</em> access to certain partitions. In addition to the Statistics nodes in our condo to which we have normal access, we can also burst beyond the condo and use other partitions at low-priority (see below).</p>
 <p>In contrast, through my FCA, I have access to all the various partitions at normal priority, but of course I have to 'pay' for access through my FCA allotment.</p>
 </div>
 <div id="savio-basic-job-submission" class="slide section level1">
 <h1>Savio: Basic job submission</h1>
 <p>Let's see how to submit a simple job. If your job will only use the resources on a single node, you can do the following.</p>
-<p>Here's an example job script that I'll run. You'll need to modify the --account value and possibly the --partition value.</p>
+<p>Here's an example job script that I'll run on the SCF condo.</p>
 <pre><code>#!/bin/bash
 # Job name:
 #SBATCH --job-name=test
@@ -468,7 +472,7 @@ matlab</code></pre>
 #SBATCH --job-name=test
 #
 # Account:
-#SBATCH --account=fc_paciorek
+#SBATCH --account=co_stat
 #
 # Partition:
 #SBATCH --partition=savio2
@@ -477,15 +481,16 @@ matlab</code></pre>
 #SBATCH --ntasks=48
 #
 # Wall clock limit:
-#SBATCH --time=00:00:30
+#SBATCH --time=00:05:00
 #
 ## Command(s) to run:
-module load python/2.7.8 ipython gcc openmpi
+module load python/2.7.8 pandas ipython gcc openmpi
 ipcontroller --ip=&#39;*&#39; &amp;
-sleep 5
+sleep 20
 # srun here should start as many engines as tasks
 srun ipengine &amp;   
-sleep 15  # wait until all engines have successfully started
+sleep 50  # wait until all engines have successfully started
+export DATADIR=/global/scratch/paciorek
 ipython parallel-analysis.py</code></pre>
 </div>
 <div id="savio-using-environment-variables" class="slide section level1">
@@ -507,7 +512,8 @@ str2num(getenv(&#39;SLURM_NTASKS&#39;)))        ## MATLAB</code></pre>
 <p>Condo users have access to the broader compute resource that is limited only by the size of partitions, under the <em>savio_lowprio</em> QoS (queue). However this QoS does not get a priority as high as the general QoSs, such as <em>savio_normal</em> and <em>savio_debug</em>, or all the condo QoSs, and it is subject to preemption when all the other QoSs become busy.</p>
 <p>More details can be found <a href="http://research-it.berkeley.edu/services/high-performance-computing/user-guide">in the <em>Low Priority Jobs</em> section of the user guide</a>.</p>
 <p>Suppose I wanted to burst beyond the Statistics condo to run on 20 nodes. I'll illustrate here with an interactive job though usually this would be for a batch job.</p>
-<pre><code>srun -A co_stat -p savio2 --qos=savio_lowprio  -N 20 -t 10:0 --pty bash
+<pre><code>srun --account=co_stat --partition=savio2 --qos=savio_lowprio \
+      --nodes=20 --time=0:10:00 --pty bash
 env | grep SLURM</code></pre>
 </div>
 <div id="savio-gpu-jobs" class="slide section level1">
@@ -519,7 +525,7 @@ env | grep SLURM</code></pre>
 #SBATCH --job-name=test
 #
 # Account:
-#SBATCH --account=fc_paciorek
+#SBATCH --account=co_stat
 #
 # Partition:
 #SBATCH --partition=savio2_gpu
@@ -603,7 +609,18 @@ tar -xvzf files.tgz</code></pre>
 <p>Globus transfers data between <em>endpoints</em>. Possible endpoints include: Savio, your laptop or desktop, NERSC, and XSEDE, among others.</p>
 <p>Savio's endpoint is named <code>ucb#brc</code>.</p>
 <p>SCF's endpoint is named <code>UC Berkeley Statistics Department</code>.</p>
-<p>If you are transferring to/from your laptop, you'll need 1) Globus Connect Personal set up, 2) your machine established as an endpoint and 3) Globus Connect Pesonal actively running on your machine. At that point you can proceed as below.</p>
+<p>If you are transferring to/from your laptop, you'll need</p>
+<ul>
+<li><ol style="list-style-type: decimal">
+<li>Globus Connect Personal set up,</li>
+</ol></li>
+<li><ol start="2" style="list-style-type: decimal">
+<li>your machine established as an endpoint and</li>
+</ol></li>
+<li><ol start="3" style="list-style-type: decimal">
+<li>Globus Connect Personal actively running on your machine. At that point you can proceed as below.</li>
+</ol></li>
+</ul>
 <p>To transfer files, you open Globus at <a href="https://globus.org">globus.org</a> and authenticate to the endpoints you want to transfer between. You can then start a transfer and it will proceed in the background, including restarting if interrupted.</p>
 <p>Globus also provides a <a href="https://docs.globus.org/cli/using-the-cli">command line interface</a> that will allow you to do transfers programmatically, such that a transfer could be embedded in a workflow script.</p>
 </div>
@@ -617,7 +634,7 @@ tar -xvzf files.tgz</code></pre>
 module load lftp
 lftp ftp.box.com
 set ssl-allow true
-user CAMPUS_USERNAME@berkeley.edu</code></pre>
+user YOUR_CALNET_ID@berkeley.edu</code></pre>
 <pre><code>lpwd # on Savio
 ls # on box
 !ls # on Savio

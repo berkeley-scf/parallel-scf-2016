@@ -105,8 +105,10 @@ Information on parallel coding (for Session 2)
 - SCF
      - tens-hundreds of GB potentially available on SCF home directories
      - hundreds of GB to TB potentially available on scratch on SCF
+     - total disk ~ 9 TB
 - Savio
-     - Unlimited storage in scratch on Savio (old files purged eventually)
+     - 'Unlimited' storage in scratch on Savio (old files purged eventually)
+     - Total scratch space ~ 850 TB
      - Savio "condo" storage: $7000 for 25 TB for 5 years
 - UC Berkeley cloud providers
      - Unlimited storage on Box through Berkeley (15 GB file limit)
