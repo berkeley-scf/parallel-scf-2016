@@ -542,7 +542,7 @@ Let's extend our parallel iPython example to multiple nodes (see *job-parallel-s
 module load python/2.7.8 pandas ipython gcc openmpi
 ipcontroller --ip='*' &
 sleep 20
-# srun here should start as many engines as tasks
+# srun here will start as many engines as SLURM tasks
 srun ipengine &   
 sleep 50  # wait until all engines have successfully started
 export DATADIR=/global/scratch/paciorek
