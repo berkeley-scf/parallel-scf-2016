@@ -11,7 +11,7 @@ clusterSize(cl) # just to check
 
 nSub <- 30  # do only first 30 for illustration
 
-result <- foreach(i = 1:nSub) %dopar% {
+result <- foreach(i = 1:nSub, .packages = 'randomForest') %dopar% {
 	cat('Starting ', i, 'th job.\n', sep = '')
 	output <- looFit(i, Y, X)
 	cat('Finishing ', i, 'th job.\n', sep = '')

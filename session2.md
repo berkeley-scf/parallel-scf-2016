@@ -34,6 +34,22 @@ Session 2 is essentially a subset/rearrangement of material in these SCF tutoria
  - [Tutorial on shared memory parallel processing](https://github.com/berkeley-scf/tutorial-parallel-basics), in particular the [HTML overview](https://rawgit.com/berkeley-scf/tutorial-parallel-basics/master/parallel-basics.html)
  - [Tutorial on distributed memory parallel processing](https://github.com/berkeley-scf/tutorial-parallel-distributed), in particular the [HTML overview](https://rawgit.com/berkeley-scf/tutorial-parallel-distributed/master/parallel-dist.html)
 
+# Outline
+
+ - Overview of parallel processing approaches
+ - Strategies for effective parallelization
+ - Basic parallelized code on one machine
+     - general considerations
+     - foreach, parLapply, mclapply in R
+     - iPython parallel
+ - Basic parallelizaton across multiple machines
+     - foreach, parLapply in R
+     - iPython parallel
+ - Random number generation in parallel jobs
+ - MPI
+     - Overview
+     - Basic usage in C/C++
+     - MPI via mpi4py and Rmpi
 
 # Taxonomy of parallel processing
 
@@ -64,7 +80,7 @@ the parent, but with different process IDs and their own memory.
 new R processes (e.g., starting processes via *Rscript*) and
 communicating with them via a communication technology called sockets.
 
-## Shared memory
+# Shared memory
 
 For shared memory parallelism, each core is accessing the same memory
 so there is no need to pass information (in the form of messages)
@@ -80,7 +96,7 @@ Two standard forms of parallelization on a single machine are:
   - multicore functionality 
      - this involves starting up new processes (computational engines) and dispatching computational tasks to them
 
-### Threading
+## Threading
 
 Threads are multiple paths of execution within a single process. If you are monitoring CPU
 usage (such as with *top* from the Linux/Mac command line) and watching a job that is executing threaded code, you'll
@@ -88,7 +104,7 @@ see the process using more than 100% of CPU. When this occurs, the
 process is using multiple cores, although it appears as a single process
 rather than as multiple processes. 
 
-## Distributed memory
+# Distributed memory
 
 Parallel programming for distributed memory parallelism requires passing
 messages between the different nodes. The standard protocol for doing
@@ -100,16 +116,17 @@ The R package *Rmpi* implements MPI in R. The *pbdR* packages for R also impleme
 More simply, in both R and Python, there are easy ways to do embarrassingly parallel calculations (such as simple parallel for loops) across multiple machines, with MPI and similar tools used behind the scenes to manage the worker processes.
 
 In summary, some types of distributed memory parallelization are:
+
  - simple parallelization of embarrassingly parallel computations (in R, Python, and Matlab) without writing code that explicitly uses MPI;
  - distributed linear algebra using the *pbdR* front-end to the *ScaLapack* package; and
  - using MPI explicitly (in R, Python and C).
 
 
-## Other type of parallel processing
+# Other type of parallel processing
 
 We won't cover either of these in this material.
 
-### GPUs
+## GPUs
 
 GPUs (Graphics Processing Units) are processing units originally designed
 for rendering graphics on a computer quickly. This is done by having
@@ -119,7 +136,7 @@ capability for general computation.
 
 In spring 2016, I gave a [workshop on using GPUs](http://statistics.berkeley.edu/computing/gpu).
 
-### Spark and Hadoop
+## Spark and Hadoop
 
 Spark and Hadoop are systems for implementing computations in a distributed
 memory environment, using the MapReduce approach. In fall 2014, I gave a [workshop on using Spark](http://statistics.berkeley.edu/computing/gpu).
@@ -129,7 +146,7 @@ memory environment, using the MapReduce approach. In fall 2014, I gave a [worksh
 The following are some basic principles/suggestions for how to parallelize
 your computation.
 
-Should I use one machine/node or many machines/nodes?
+# Parallelization strategies: *Should I use one machine/node or many machines/nodes?*
 
  - If you can do your computation on the cores of a single node using
 shared memory, that will be faster than using the same number of cores
@@ -140,7 +157,7 @@ a single machine with a lot of memory.
  - That said, if you would run out of memory on a single node, then you'll
 need to use distributed memory.
 
-What level or dimension should I parallelize over?
+# Parallelization strategies: *What level or dimension should I parallelize over?*
 
  - If you have nested loops, you generally only want to parallelize at
 one level of the code. That said, there may be cases in which it is
@@ -154,7 +171,7 @@ indexing and not explicitly do nested parallelization.
  - You generally want to parallelize in such a way that your code is
 load-balanced and does not involve too much communication. 
 
-How do I balance communication overhead with keeping my cores busy?
+# Parallelization strategies: *How do I balance communication overhead with keeping my cores busy?*
 
  - If you have very few tasks, particularly if the tasks take different
 amounts of time, often some processors will be idle and your code
@@ -162,8 +179,8 @@ poorly load-balanced.
  - If you have very many tasks and each one takes little time, the communication
 overhead of starting and stopping the tasks will reduce efficiency.
 
-Should multiple tasks be pre-assigned to a process (i.e., a worker) (sometimes called *prescheduling*) or should tasks
-be assigned dynamically as previous tasks finish? 
+# Parallelization strategies: *Should multiple tasks be pre-assigned to a process (i.e., a worker) (sometimes called *prescheduling*) or should tasks
+be assigned dynamically as previous tasks finish?*
 
  - Basically if you have many tasks that each take similar time, you
 want to preschedule the tasks to reduce communication. If you have few tasks
@@ -174,9 +191,7 @@ tasks should be prescheduled. E.g., the *mc.preschedule* argument in *mclapply* 
 the *.scheduling* argument in *parLapply*.
 
 
-# Basic parallelized loops/maps/apply
-
-## Overview
+# Basic parallelized loops/maps/apply - Overview
 
 All of the functionality discussed here applies *only* if the iterations/loops of your calculations can be done completely separately and do not depend on one another. This scenario is called an *embarrassingly parallel* computation.  So coding up the evolution of a time series or a Markov chain is not possible using these tools. However, bootstrapping, random forests, simulation studies, cross-validation
 and many other statistical methods can be handled in this way.
@@ -193,11 +208,11 @@ The key challenges that arise are:
  - ensuring use of distinct random numbers in the different tasks, and
  - debugging code that operates in another process.
 
-## Parallel loops and *apply* functions in R
+# Parallel loops and *apply* functions on one machine in R
 
 Demo code below is also in various R files in the repository.
 
-### Parallel for loops with *foreach*
+# Parallel for loops with *foreach* on one machine
 
 A simple way to exploit parallelism in R  is to use the *foreach* package to do a for loop in parallel.
 
@@ -249,7 +264,7 @@ You can debug by running serially using *%do%* rather than
 the calculations.
 
 
-### Parallel apply functionality
+# Parallel apply functionality in R on one machine
 
 The *parallel* package has the ability to parallelize the various
 *apply* functions (apply, lapply, sapply, etc.). It's a bit hard to find the [vignette for the parallel package](http://stat.ethz.ch/R-manual/R-devel/library/parallel/doc/parallel.pdf)
@@ -306,7 +321,7 @@ Note that some R packages can directly interact with the parallelization
 packages to work with multiple cores. E.g., the *boot* package
 can make use of the *parallel* package directly. 
 
-### Loading packages and accessing global variables within your parallel tasks
+# Loading packages and accessing global variables within your parallel tasks in R
 
 Whether you need to explicitly load packages and export global variables from the master process to the parallelized worker processes depends on the details of how you are doing the parallelization.
 
@@ -314,7 +329,7 @@ In R, with *foreach* with the *doParallel* backend, parallel *apply* statements 
 
 In contrast, with parallel *apply* statements when starting the cluster using the standard *makeCluster* (which sets up a so-called *PSOCK* cluster, starting the R worker processes via *Rscript*), one needs to load packages within the code that is executed in parallel. In addition one needs to use *clusterExport* to tell R which objects in the global environment should be available to the worker processes. This involves making as many copies of the objects as there are worker processes, so one can easily exceed the physical memory (RAM) on the machine if one has large objects, and the copying of large objects will take time. 
 
-## Parallel looping in Python
+# Parallel looping in Python
 
 Demo code below is also in *ipython-parallel.py*.
 
@@ -384,7 +399,7 @@ Finally we stop the worker engines:
 ipcluster stop
 ```
 
-### Loading packages and accessing global variables within your parallel tasks
+## Loading packages and accessing global variables within your parallel tasks
 
 In iPython parallel, you need to do some work to ensure that data and packages are available on the workers. 
 
@@ -393,15 +408,17 @@ In iPython parallel, you need to do some work to ensure that data and packages a
 
 # Basic parallelized loops/maps/apply across multiple machines
 
-## Distributed foreach and apply in R
+Here are some of the approaches that are possible on multiple machines:
 
-### foreach with the *doMPI* and *doSNOW* backends
+ - foreach in R with either doMPI or doSNOW backends
+ - parallel apply in R with a multi-machine cluster of workers
+ - iPython parallel with engines running on multiple nodes
+
+# foreach with *doMPI*
 
 Just as we used *foreach* in a shared memory context, we can
 use it in a distributed memory context as well, and R will handle
 everything behind the scenes for you. 
-
-#### *doMPI*
 
 Start R through the *mpirun* command as discussed above, either
 as a batch job or for interactive use. We'll only ask for 1 process
@@ -410,12 +427,12 @@ because the worker processes will be started automatically from within R (but us
 When using this within SLURM, we don't need to specify the machines to be used because SLURM and MPI are integrated.
 
 ```
-mpirun R CMD BATCH -q --no-save doMPI.R doMPI.out
+mpirun R CMD BATCH -q --no-save foreach-doMPI.R foreach-doMPI.out
 ```
 
 If one were doing this outside of SLURM, one may need to do this so that MPI knows the machines (and number of cores per machine) that are available:
 ```
-mpirun -machinefile .hosts R CMD BATCH -q --no-save doMPI.R doMPI.out
+mpirun -machinefile .hosts R CMD BATCH -q --no-save foreach-doMPI.R foreach-doMPI.out
 mpirun -machinefile .hosts R --no-save
 ```
 
@@ -425,7 +442,7 @@ arwen.berkeley.edu slots=3
 beren.berkeley.edu slots=2
 ```
 
-Here's R code for using *Rmpi* as the back-end to *foreach*.
+Here's the R code for using *Rmpi* as the back-end to *foreach*.
 If you call *startMPIcluster* with no arguments, it will start
 up one fewer worker processes than the number of hosts times slots given to mpirun
 so your R code will be more portable. 
@@ -444,7 +461,7 @@ clusterSize(cl) # just to check
 
 nSub <- 30  # do only first 30 for illustration
 
-result <- foreach(i = 1:nSub) %dopar% {
+result <- foreach(i = 1:nSub, .packages = 'randomForest') %dopar% {
 	cat('Starting ', i, 'th job.\n', sep = '')
 	output <- looFit(i, Y, X)
 	cat('Finishing ', i, 'th job.\n', sep = '')
@@ -457,28 +474,17 @@ closeCluster(cl)
 mpi.quit()
 ```
 
-
 A caution concerning Rmpi/doMPI: when you invoke `startMPIcluster()`,
 all the slave R processes become 100% active and stay active until
 the cluster is closed. In addition, when *foreach* is actually
 running, the master process also becomes 100% active. So using this
 functionality involves some inefficiency in CPU usage. This inefficiency
-is not seen with a sockets cluster (Section 3.1.4) nor when using other
+is not seen with a doSNOW cluster setup with `type = "SOCK"` nor when using other
 Rmpi functionality - i.e., starting slaves with *mpi.spawn.Rslaves*
 and then issuing commands to the slaves.
 
-If you specified `-np` with more than one process then as with the C-based
-MPI job above, you can control the threading via OMP_NUM_THREADS
-and the -x flag to *mpirun*. Note that this only works when the
-R processes are directly started by *mpirun*, which they are
-not if you set -np 1. The *maxcores* argument to *startMPIcluster()*
-does not seem to function (perhaps it does on other systems).
 
-Sidenote: You can use *doMPI* on a single node, which might be useful for avoiding
-some of the conflicts between R's forking functionality and openBLAS that
-can cause R to hang when using *foreach* with *doParallel*.
-
-#### *doSNOW*
+# foreach with doSNOW
 
 The *doSNOW* backend has the advantage that it doesn't need to have MPI installed on the system. MPI can be tricky to install and keep working, so this is an easy approach to using *foreach* across multiple machines.
 
@@ -501,7 +507,7 @@ source('rf.R')  # loads in data and looFit()
 
 nSub <- 30  # do only first 30 for illustration
 
-result <- foreach(i = 1:nSub) %dopar% {
+result <- foreach(i = 1:nSub, .packages = 'randomForest') %dopar% {
 	cat('Starting ', i, 'th job.\n', sep = '')
 	output <- looFit(i, Y, X)
 	cat('Finishing ', i, 'th job.\n', sep = '')
@@ -512,11 +518,13 @@ print(result[1:5])
 stopCluster(cl)  # good practice, but not strictly necessary
 ```
 
-#### Loading packages and accessing variables within your parallel tasks
+# Loading packages and accessing variables within your parallel R tasks
 
-When using *foreach* with multiple machines, you need to use the *.packages* argument (or load the package in the code being run in parallel) to load any packages needed in the code. You do not need to explicitly export variables from the master process to the workers. Rather, *foreach* determines which variables in the global environment of the master process are used in the code being run in parallel and makes copies of those in each worker process. Note that these variables are read-only on the workers and cannot be modified (if you try to do so, you'll notice that *foreach* actually did not make copies of the variables that your code tries to modify). 
+When using *foreach* with multiple machines, you need to use the *.packages* argument (or load the package in the code being run in parallel) to load any packages needed in the code. 
 
-### 3.1.4) Using parallel apply with makeCluster on multiple nodes
+You do not need to explicitly export variables from the master process to the workers. Rather, *foreach* determines which variables in the global environment of the master process are used in the code being run in parallel and makes copies of those in each worker process. Note that these variables are read-only on the workers and cannot be modified (if you try to do so, you'll notice that *foreach* actually did not make copies of the variables that your code tries to modify). 
+
+# Using parallel apply in R with makeCluster on multiple nodes
 
 One can also set up a cluster with the worker processes communicating via sockets. You just need to specify
 a character vector with the machine names as the input to *makeCluster()*. A nice thing about this is that it doesn't involve any of the complications of working with needing MPI installed.
@@ -532,8 +540,13 @@ cl
 
 source('rf.R')  # loads in data and looFit()
 
-n = 1e7
-clusterExport(cl, c('n'))
+nSub <- 30
+input <- seq_len(nSub)
+
+# not needed because Y and X are arguments,
+# but would be needed if they were used as global variables:
+# clusterExport(cl, c('Y', 'X'))
+
   
 res <- parSapply(cl, input, looFit, Y, X, TRUE)
 
@@ -545,7 +558,7 @@ stopCluster(cl) # not strictly necessary
 Note the use of *clusterExport*, needed to make variables in the master process available to the workers; this involves making a copy of each variable for each worker process. You'd also need to load any packages used in the code being run in parallel in that code. 
 
 
-## Distributed parallel looping in Python
+# Distributed parallel looping in Python
 
 One can use iPython's parallelization tools in a context with multiple nodes, though the setup to get the worker processes is a bit more involved when you have multiple nodes. For details on using iPython parallel on a single node, see the [parallel basics tutorial appendix](https://github.com/berkeley-scf/tutorial-parallel-basics). 
 
@@ -577,7 +590,7 @@ ssh other_host "for (( i = 0; i < ${nengines}; i++ )); do ipengine & done"
 sleep 45  # wait until all engines have successfully started
 ```
 
-# Random number generation (RNG) in parallel 
+# Random number generation (RNG) in parallel - Overview
 
 The key thing when thinking about random numbers in a parallel context
 is that you want to avoid having the same 'random' numbers occur on
@@ -615,7 +628,7 @@ More generally to avoid this problem, the key is to use an algorithm
 that ensures sequences that do not overlap.
 
 
-## Ensuring separate sequences in R
+# Ensuring separate sequences in R
 
 In R, the  *rlecuyer* package deals with this (*rsprng* used to but it is no longer on CRAN).
 The L'Ecuyer algorithm has a period of $2^{191}$, which it divides
@@ -623,7 +636,7 @@ into subsequences of length $2^{127}$.
 
 The code below is also in *parallelRNG.R*.
 
-### With the parallel package
+## With the parallel package
 
 Here's how you initialize independent sequences on different processes
 when using the *parallel* package's parallel apply functionality
@@ -676,11 +689,9 @@ identical(res,res2)
 The documentation for *mcparallel* gives more information about
 reproducibility based on *mc.set.seed*.
 
+# Ensuring separate sequences in R with foreach
 
-###  With foreach
-
-
-#### Getting independent streams
+## Getting independent streams
 
 One question is whether *foreach* deals with RNG correctly. This
 is not documented, but the developers (Revolution Analytics) are well
@@ -691,7 +702,7 @@ the discussion above r.e. *mclapply* holds for *foreach*
 as well, so you should do `RNGkind("L'Ecuyer-CMRG")`
 before your foreach call. 
 
-#### Ensuring reproducibility
+## Ensuring reproducibility
 
 While using *foreach* as just described should ensure that the
 streams on each worker are are distinct, it does not ensure reproducibility
@@ -720,7 +731,7 @@ identical(result,result2)
 
 You can ignore the warnings about closing unused connections printed out above.
 
-## RNG in Python
+# RNG in Python
 
 Python uses the Mersenne-Twister generator. If you're using the RNG
 in *numpy/scipy*, you can set the seed using `numpy.random.seed` or `scipy.random.seed`.
@@ -768,7 +779,7 @@ can hang, error messages from the workers may not be seen or readily
 accessible, and it can be difficult to assess the state of the worker
 processes. 
 
-## Basic syntax for MPI in C
+# Basic syntax for MPI in C
 
 
 Here's a basic hello world example  The code is also in *mpiHello.c*.
@@ -818,13 +829,13 @@ mpirun -machinefile .hosts -np 4 quad_mpi
 ```
 
 
-## Using MPI from Python and R
+# Using MPI from Python and R
 
 Both R (via Rmpi and pbdR) and Python (via mpi4py) allow you to make MPI calls within R and Python. 
 
 Here's some basic use of MPI within Python.
 
-```{r, mpi4py, engine='python', eval=FALSE}
+```
 from mpi4py import MPI
 import numpy as np
 

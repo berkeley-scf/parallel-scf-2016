@@ -8,8 +8,9 @@ cl
 
 source('rf.R')  # loads in data and looFit()
 
-n = 1e7
-clusterExport(cl, c('n'))
+# not needed because Y and X are arguments,
+# but would be needed if they were used as global variables
+# clusterExport(cl, c('Y', 'X'))
   
 res <- parSapply(cl, input, looFit, Y, X, TRUE)
 
