@@ -8,6 +8,9 @@ cl
 
 source('rf.R')  # loads in data and looFit()
 
+nSub <- 30
+input <- seq_len(nSub)
+
 # not needed because Y and X are arguments,
 # but would be needed if they were used as global variables
 # clusterExport(cl, c('Y', 'X'))
