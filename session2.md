@@ -29,7 +29,7 @@ This workshop is based largely on already-prepared SCF and BRC (Berkeley Researc
 
 Information on parallel coding (for Session 2)
 
-Session 2 is essentially a subset/rearrangement of material in these SCF tutorials.
+Session 2 is essentially a subset/rearrangement of material in these SCF tutorials:
 
  - [Tutorial on shared memory parallel processing](https://github.com/berkeley-scf/tutorial-parallel-basics), in particular the [HTML overview](https://rawgit.com/berkeley-scf/tutorial-parallel-basics/master/parallel-basics.html)
  - [Tutorial on distributed memory parallel processing](https://github.com/berkeley-scf/tutorial-parallel-distributed), in particular the [HTML overview](https://rawgit.com/berkeley-scf/tutorial-parallel-distributed/master/parallel-dist.html)
@@ -155,7 +155,7 @@ with a lot of data/high memory requirements that one might think of
 as requiring Spark or Hadoop may in some cases be much faster if you can find
 a single machine with a lot of memory.
  - That said, if you would run out of memory on a single node, then you'll
-need to use distributed memory.
+need to use multiple nodes.
 
 # Parallelization strategies: *What level or dimension should I parallelize over?*
 
@@ -179,7 +179,7 @@ poorly load-balanced.
  - If you have very many tasks and each one takes little time, the communication
 overhead of starting and stopping the tasks will reduce efficiency.
 
-# Parallelization strategies: *Should multiple tasks be pre-assigned to a process (i.e., a worker) (sometimes called *prescheduling*) or should tasks
+# Parallelization strategies: *Should multiple tasks be pre-assigned to a process (i.e., a worker) or should tasks
 be assigned dynamically as previous tasks finish?*
 
  - Basically if you have many tasks that each take similar time, you
@@ -189,6 +189,7 @@ preschedule, to improve load-balancing.
  - For R in particular, some of R's parallel functions allow you to say whether the 
 tasks should be prescheduled. E.g., the *mc.preschedule* argument in *mclapply* and
 the *.scheduling* argument in *parLapply*.
+ - In iPython, dynamic assignment is called a *load-balanced view*, while prescheduling is called a *direct view*.
 
 
 # Basic parallelized loops/maps/apply - Overview
@@ -256,12 +257,8 @@ also provides functionality for collecting and managing
 the results to avoid some of the bookkeeping
 you would need to do if writing your own standard for loop.
 The result of *foreach* will generally be a list, unless 
-we request the results be combined in different way, as we do here using `.combine = c`.
+we request the results be combined in different way, using the `.combine` argument.
 
-You can debug by running serially using *%do%* rather than
-*%dopar%*. Note that you may need to load packages within the
-*foreach* construct to ensure a package is available to all of
-the calculations.
 
 
 # Parallel apply functionality in R on one machine
@@ -333,7 +330,7 @@ In contrast, with parallel *apply* statements when starting the cluster using th
 
 Demo code below is also in *ipython-parallel.py*.
 
-I'll cover iPython parallel functionality, which allows one to parallelize on a single machine (discussed here) or across multiple machines (see the tutorial on distributed memory parallelization). There are a variety of other approaches one could use, of which I discuss two (the *pp* and *multiprocessing* packages) in the Appendix.
+I'll cover iPython parallel functionality, which allows one to parallelize on a single machine (discussed here) or across multiple machines (see the tutorial on distributed memory parallelization). There are a variety of other approaches one could use, of which I discuss two (the *pp* and *multiprocessing* packages) in the distributed memory tutorial linked to early in this document.
 
 First we need to start our worker engines.
 
@@ -399,7 +396,7 @@ Finally we stop the worker engines:
 ipcluster stop
 ```
 
-## Loading packages and accessing global variables within your parallel tasks
+# Loading packages and accessing global variables within your parallel tasks in iPython
 
 In iPython parallel, you need to do some work to ensure that data and packages are available on the workers. 
 
@@ -424,7 +421,7 @@ Start R through the *mpirun* command as discussed above, either
 as a batch job or for interactive use. We'll only ask for 1 process
 because the worker processes will be started automatically from within R (but using the machine names information passed to mpirun).
 
-When using this within SLURM, we don't need to specify the machines to be used because SLURM and MPI are integrated.
+When using this within the SLURM scheduling software (used on the newer SCF cluster and on Savio), we don't need to specify the machines to be used because SLURM and MPI are integrated.
 
 ```
 mpirun R CMD BATCH -q --no-save foreach-doMPI.R foreach-doMPI.out
@@ -432,7 +429,8 @@ mpirun R CMD BATCH -q --no-save foreach-doMPI.R foreach-doMPI.out
 
 If one were doing this outside of SLURM, one may need to do this so that MPI knows the machines (and number of cores per machine) that are available:
 ```
-mpirun -machinefile .hosts R CMD BATCH -q --no-save foreach-doMPI.R foreach-doMPI.out
+mpirun -machinefile .hosts R CMD BATCH -q --no-save foreach-doMPI.R \
+       foreach-doMPI.out
 mpirun -machinefile .hosts R --no-save
 ```
 
@@ -548,19 +546,18 @@ input <- seq_len(nSub)
 # clusterExport(cl, c('Y', 'X'))
 
   
-res <- parSapply(cl, input, looFit, Y, X, TRUE)
+result <- parSapply(cl, input, looFit, Y, X, TRUE)
 
 result[1:5]
 
 stopCluster(cl) # not strictly necessary
 ```
 
-Note the use of *clusterExport*, needed to make variables in the master process available to the workers; this involves making a copy of each variable for each worker process. You'd also need to load any packages used in the code being run in parallel in that code. 
-
+Note the need to load the packages used in the parallelized function on each of the nodes.
 
 # Distributed parallel looping in Python
 
-One can use iPython's parallelization tools in a context with multiple nodes, though the setup to get the worker processes is a bit more involved when you have multiple nodes. For details on using iPython parallel on a single node, see the [parallel basics tutorial appendix](https://github.com/berkeley-scf/tutorial-parallel-basics). 
+One can use iPython's parallelization tools in a context with multiple nodes, though the setup to get the worker processes is a bit more involved when you have multiple nodes. 
 
 If we are using the SLURM scheduling software, here's how we start up the worker processes:
 
@@ -753,7 +750,7 @@ There are multiple MPI implementations, of which *openMPI* and
 *mpich* are very common. *openMPI* is on the SCF and Savio, and we'll use that.
 
 In MPI programming, the same code runs on all the machines. This is
-called SPMD (single program, multiple data). As we saw a bit with the pbdR code, one
+called SPMD (single program, multiple data). One
 invokes the same code (same program) multiple times, but the behavior
 of the code can be different based on querying the rank (ID) of the
 process. Since MPI operates in a distributed fashion, any transfer

@@ -15,7 +15,7 @@ input <- seq_len(nSub)
 # but would be needed if they were used as global variables
 # clusterExport(cl, c('Y', 'X'))
   
-res <- parSapply(cl, input, looFit, Y, X, TRUE)
+result <- parSapply(cl, input, looFit, Y, X, TRUE)
 
 result[1:5]
 
